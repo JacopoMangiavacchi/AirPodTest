@@ -9,11 +9,19 @@
 import UIKit
 import AVFoundation
 
-class ViewController: UIViewController, AVAudioRecorderDelegate {
+class ViewController: UIViewController, AVAudioRecorderDelegate, AVAudioPlayerDelegate {
 
     @IBOutlet weak var recordingButton: UIButton!
     var recordingSession: AVAudioSession!
     var audioRecorder: AVAudioRecorder!
+    var audioPlayer: AVAudioPlayer!
+    
+    enum RecPlayStatus {
+        case Recording
+        case Playback
+    }
+    
+    var status = RecPlayStatus.Recording
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -43,10 +51,15 @@ class ViewController: UIViewController, AVAudioRecorderDelegate {
     }
 
     @IBAction func onRecording(_ sender: Any) {
-        if audioRecorder == nil {
-            startRecording()
-        } else {
-            finishRecording(success: true)
+        switch status {
+        case .Recording:
+            if audioRecorder == nil {
+                startRecording()
+            } else {
+                finishRecording(success: true)
+            }
+        case .Playback:
+            playback()
         }
     }
     
@@ -74,6 +87,7 @@ class ViewController: UIViewController, AVAudioRecorderDelegate {
             audioRecorder.record()
             
             recordingButton.setTitle("Stop Recording", for: .normal)
+            recordingButton.setTitleColor(.orange, for: .normal)
         } catch {
             finishRecording(success: false)
         }
@@ -85,12 +99,32 @@ class ViewController: UIViewController, AVAudioRecorderDelegate {
         audioRecorder = nil
         
         if success {
-            recordingButton.setTitle("(OK) Start Recording", for: .normal)
+            status = RecPlayStatus.Playback
+            recordingButton.setTitle("Playback", for: .normal)
+            recordingButton.setTitleColor(.blue, for: .normal)
         } else {
-            recordingButton.setTitle("(KO) Start Recording", for: .normal)
+            status = RecPlayStatus.Recording
+            recordingButton.setTitle("(KO) Start New Recording", for: .normal)
+            recordingButton.setTitleColor(.red, for: .normal)
             // recording failed :(
         }
     }
 
+
+    func playback() {
+        let audioFilename = getDocumentsDirectory().appendingPathComponent("recording.m4a")
+
+        try! audioPlayer = AVAudioPlayer(contentsOf: audioFilename)
+        audioPlayer.delegate = self
+        audioPlayer.prepareToPlay()
+        audioPlayer.play()
+    }
+
+
+    func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
+        status = RecPlayStatus.Recording
+        recordingButton.setTitle("Start New Recording", for: .normal)
+        recordingButton.setTitleColor(.red, for: .normal)
+    }
 }
 
