@@ -29,8 +29,14 @@ class ViewController: UIViewController, AVAudioRecorderDelegate, AVAudioPlayerDe
         recordingSession = AVAudioSession.sharedInstance()
         
         do {
-            try recordingSession.setCategory(AVAudioSessionCategoryPlayAndRecord)
+            try recordingSession.setCategory(AVAudioSessionCategoryPlayAndRecord, with: [.allowBluetooth])
             try recordingSession.setActive(true)
+            let availableInputs = recordingSession.availableInputs
+            for input in availableInputs! {
+                print(input)
+            }
+            let input = availableInputs!.count > 0 ? availableInputs![1] : availableInputs![0]
+            try! recordingSession.setPreferredInput(input)
             recordingSession.requestRecordPermission() { [unowned self] allowed in
                 DispatchQueue.main.async {
                     if allowed {
