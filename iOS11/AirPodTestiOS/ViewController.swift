@@ -73,7 +73,7 @@ class ViewController: UIViewController, AVAudioRecorderDelegate {
             audioRecorder.delegate = self
             audioRecorder.record()
             
-            recordingButton.setTitle("Tap to Stop", for: .normal)
+            recordingButton.setTitle("Stop Recording", for: .normal)
         } catch {
             finishRecording(success: false)
         }
