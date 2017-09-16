@@ -31,12 +31,14 @@ class ViewController: UIViewController, AVAudioRecorderDelegate, AVAudioPlayerDe
         do {
             try recordingSession.setCategory(AVAudioSessionCategoryPlayAndRecord, with: [.allowBluetooth])
             try recordingSession.setActive(true)
+            
             let availableInputs = recordingSession.availableInputs
             for input in availableInputs! {
                 print(input)
             }
             let input = availableInputs!.count > 0 ? availableInputs![1] : availableInputs![0]
-            try! recordingSession.setPreferredInput(input)
+            try recordingSession.setPreferredInput(input)
+            
             recordingSession.requestRecordPermission() { [unowned self] allowed in
                 DispatchQueue.main.async {
                     if allowed {
@@ -46,8 +48,8 @@ class ViewController: UIViewController, AVAudioRecorderDelegate, AVAudioPlayerDe
                     }
                 }
             }
-        } catch {
-            // failed to record!
+        } catch let error {
+            print(error)
         }
     }
 
@@ -88,6 +90,8 @@ class ViewController: UIViewController, AVAudioRecorderDelegate, AVAudioPlayerDe
         ]
         
         do {
+            try recordingSession.overrideOutputAudioPort(AVAudioSessionPortOverride.none)
+
             audioRecorder = try AVAudioRecorder(url: audioFilename, settings: settings)
             audioRecorder.delegate = self
             audioRecorder.record()
@@ -120,10 +124,16 @@ class ViewController: UIViewController, AVAudioRecorderDelegate, AVAudioPlayerDe
     func playback() {
         let audioFilename = getDocumentsDirectory().appendingPathComponent("recording.m4a")
 
-        try! audioPlayer = AVAudioPlayer(contentsOf: audioFilename)
-        audioPlayer.delegate = self
-        audioPlayer.prepareToPlay()
-        audioPlayer.play()
+        do {
+            try recordingSession.overrideOutputAudioPort(AVAudioSessionPortOverride.speaker)
+            
+            try audioPlayer = AVAudioPlayer(contentsOf: audioFilename)
+            audioPlayer.delegate = self
+            audioPlayer.prepareToPlay()
+            audioPlayer.play()
+        } catch let error {
+            print(error)
+        }
     }
 
 
@@ -131,6 +141,11 @@ class ViewController: UIViewController, AVAudioRecorderDelegate, AVAudioPlayerDe
         status = RecPlayStatus.Recording
         recordingButton.setTitle("Start New Recording", for: .normal)
         recordingButton.setTitleColor(.red, for: .normal)
+    }
+    
+    
+    func audioPlayerDecodeErrorDidOccur(_ player: AVAudioPlayer, error: Error?) {
+        print(error)
     }
 }
 
